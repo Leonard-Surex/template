@@ -9,7 +9,7 @@
     {
         public function process(IMemoryManager $memoryManager, IProcessor $processor): mixed
         {
-            $data = $this->getValue($memoryManager);
+            $data = $this->getValue($memoryManager, $processor);
 
             if ($data === null) {
                 return null;

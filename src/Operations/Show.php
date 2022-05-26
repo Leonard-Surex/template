@@ -15,7 +15,8 @@
             }
 
             $memoryManager->progress();
-            $label = $this->getValue($memoryManager) !== null ? $this->getValue($memoryManager) : $memoryManager->getToken();
+            $value = $this->getValue($memoryManager, $processor);
+            $label = $value !== null ? $value : $memoryManager->getToken();
             $memoryManager->progress();
         
             return isset($memoryManager->blocks[$label]) ? $memoryManager->blocks[$label] : "";

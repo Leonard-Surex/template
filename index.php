@@ -11,6 +11,7 @@
             ['name' => 'Audrey Waugh', 'title' => 'Retired', 'description' => 'Payed to breath.'],
             ['name' => 'Anthony Harle', 'title' => 'Artist', 'description' => 'Loves penises.'],
         ],
+        'number' => 4,
     ];
 
     $template = new Template();

@@ -7,35 +7,31 @@
     use Template\Processor\IProcessor;
     use Template\Processor\Processor;
 
-    class Block extends Operation
+    class IfOp extends Operation
     {
         public function process(IMemoryManager $memoryManager, IProcessor $processor): mixed
         {
             $token = $memoryManager->getToken();
-            if ($token !== 'block') {
+            if ($token !== 'if') {
                 return null;
             }                                   
-             
-            $memoryManager->progress();
-            $value = $this->getValue($memoryManager, $processor);
-            $label = $value !== null ? $value : $memoryManager->getToken();
+
             $memoryManager->progress();
 
-            $block = $this->consumeBlock("block", $memoryManager);            
+            $value = $this->getValue($memoryManager, $processor);
+
+            $memoryManager->progress();
+            $block = $this->consumeBlock("if", $memoryManager);            
             if ($block === null) {
                 return null;
             }                                        
 
-            $variables = [];
-            $childMemoryManager = new MemoryManager($block, $variables, $memoryManager);
-            $childProcessor = new Processor($childMemoryManager, $processor->getFileManager(), $processor->getConfig());
-            
-            $result = $childProcessor->run();
-
-            if (!isset($memoryManager->blocks[$label])) {
-                $memoryManager->blocks[$label] = "";
+            if ($value == true) {
+                $variables = [];
+                $childMemoryManager = new MemoryManager($block, $variables, $memoryManager);
+                $childProcessor = new Processor($childMemoryManager, $processor->getFileManager(), $processor->getConfig());            
+                return $childProcessor->run();    
             }
-            $memoryManager->blocks[$label] .= $result;
 
             return "";
         }

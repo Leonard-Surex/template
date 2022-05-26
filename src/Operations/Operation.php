@@ -2,13 +2,16 @@
     namespace Template\Operations;
 
     use Template\MemoryManager\IMemoryManager;
+    use Template\MemoryManager\MemoryManager;
+    use Template\Parser\TokenParser;
     use Template\Processor\IProcessor;
+    use Template\Processor\Processor;
 
     abstract class Operation
     {
         public abstract function process(IMemoryManager $memoryManager, IProcessor $processor): mixed;
 
-        protected function getValue(IMemoryManager $memoryManager): mixed
+        protected function getValue(IMemoryManager $memoryManager, IProcessor $processor, bool $singleToken = false): mixed
         {
             $type = null;        
             $ip = $memoryManager->getIp();
@@ -17,24 +20,47 @@
                 return null;
             }
 
-            // String Literal
-            if (substr($token, 0, 1) === '"' && substr($token, -1) === '"') {
+            $one = $memoryManager->getToken(1);
+            if ($one == "==" && !$singleToken) {
+                // Boolean, is equal to
+                $leftValue = $this->getValue($memoryManager, $processor, true);
+                $memoryManager->progress(2);
+                $rightValue = $this->getValue($memoryManager, $processor);
+                $type = "bool";
+                if ($leftValue == $rightValue) {
+                    $value = true;
+                } else {
+                    $value = false;
+                }
+            } else if ($one == "+" && !$singleToken) {
+                // Concat values 
+                $leftValue = $this->getValue($memoryManager, $processor, true);
+                $memoryManager->progress(2);
+                $rightValue = $this->getValue($memoryManager, $processor);
+                $type = "string";
+                $value = $leftValue . "" . $rightValue;
+            } else if (substr($token, 0, 1) === '"' && substr($token, -1) === '"') {
+                // String Literal
                 $type = "string";
                 $value = substr($token, 1, strlen($token) - 2);
+            }
+            else if (substr($token, 0, 1) === '(' && substr($token, -1) === ')') {
+                // Brackets
+                $value = substr($token, 1, strlen($token) - 2);
+                $tokens = TokenParser::parse($value);
+                $variables = [];
+                $childMemoryManager = new MemoryManager($tokens, $variables, $memoryManager);
+                $childProcessor = new Processor($childMemoryManager, $processor->getFileManager(), $processor->getConfig());
+                $value = $childProcessor->run(); 
+                $type = $this->getType($value);
+            } else if (is_numeric($token)) {                
+                // Numeric constant
+                $type = "number";
+                $value = intval($token);
             } else {
                 // Variable
                 $value = $memoryManager->getVariable($token);
-                if ($value !== null) {
-                    if (is_numeric($value)) {
-                        $type = "number";
-                    } else if (is_string($value)) {
-                        $type = "number";
-                    } else if (is_array($value)) {
-                        $type = "array";
-                    } else {
-                        $type = "unknown";
-                    }
-                }
+                $type = $this->getType($value);
             }
 
             if ($type === null) {
@@ -42,12 +68,26 @@
                 return null;
             }
 
-            if ($memoryManager->getToken(1) === '+') {
-                $memoryManager->progress(2);
-                $value .= $this->getValue($memoryManager);
-            } 
-
             return $value;
+        }
+
+        protected function getType(mixed $value): ?string
+        {
+            $type = null;
+            if ($value !== null) {
+                if (is_numeric($value)) {
+                    $type = "number";
+                } else if (is_bool($value)) {
+                    $type = "bool";
+                } else if (is_string($value)) {
+                    $type = "number";
+                } else if (is_array($value)) {
+                    $type = "array";
+                } else {
+                    $type = "unknown";
+                }
+            }
+            return $type;
         }
 
         protected function consumeBlock(string $tag, IMemoryManager $memoryManager): ?array

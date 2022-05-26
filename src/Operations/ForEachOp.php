@@ -46,8 +46,6 @@
                 return null;
             }                                        
 
-            //echo "Block: " . json_encode($block) . "<br/>";
-
             $result = "";
             foreach ($array as $index => $item)
             {

@@ -4,6 +4,7 @@
     use Template\FileManager\IFileManager;
     use Template\MemoryManager\IMemoryManager;
     use Template\Operations\ForEachOp;
+    use Template\Operations\IfOp;
     use Template\Operations\Block;
     use Template\Operations\Show;
     use Template\Operations\Value;
@@ -27,6 +28,7 @@
                     ->addOperation(new Value())
                     ->addOperation(new Block())
                     ->addOperation(new Show())
+                    ->addOperation(new IfOp())
                     ->addOperation(new ForEachOp());
         }
 
